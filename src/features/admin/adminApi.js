@@ -1,0 +1,220 @@
+import axios from "axios";
+import { useSelector } from "react-redux";
+const BASE_URL = `${import.meta.env.VITE_API_URL || "http://localhost:5000"}/api/store`;
+
+
+export const postProduct = async (productData,user,accessToken) => {
+ 
+  console.log("User is", user);
+  console.log("Access token is", accessToken);
+  console.log("Product data is", productData);
+  const imageArray = [];
+
+  for (const image of productData.images) {
+    const data = new FormData();
+    data.append("file", image);
+    data.append("upload_preset", "daily_deals");
+    data.append("cloud_name", "dz2py1xii");
+
+    const imageinfo = await axios.post(
+      "https://api.cloudinary.com/v1_1/dz2py1xii/image/upload",
+      data
+    );
+
+    imageArray.push(imageinfo.data.url);
+  }
+
+  const productInfo = {
+    name: productData.name,
+    description: productData.description,
+    price: productData.price,
+    quantity: productData.quantity,
+    category: productData.category,
+    images: imageArray,
+    size: productData.sizes || [],
+    color: productData.colors || [],
+    user:user,
+    subcategory : productData.subcategory,
+    genre:productData.genre,
+    material:productData.material,
+  };
+  const token = accessToken || user?.accessToken; 
+  try {
+    console.log("Sending product info:", productInfo);
+    const response = await axios.post(`${BASE_URL}/products`, productInfo, {
+      withCredentials: true,
+      headers: {
+        Authorization: `Bearer ${token}`, 
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error adding product:", error.response?.data || error.message);
+    throw error;
+  }
+};
+
+
+export const getProducts = async (user, accessToken) => {
+  const token = accessToken || user?.accessToken;
+  try {
+    const response = await axios.get(`${BASE_URL}/products`, {
+      params:{
+        userType: user.userType,
+        storeId: user.id
+      },
+      withCredentials: true,
+      headers: {
+        Authorization: `Bearer ${token}`, 
+      },
+    });
+
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching products:", error.response?.data || error.message);
+    throw error;
+  }
+}
+
+export const deleteProductApi = async (productId, user, accessToken) => {
+  const token = accessToken || user?.accessToken;
+  try {
+    const response = await axios.delete(`${BASE_URL}/products/${productId}`, {
+       params:{
+        userType: user.userType,
+        storeId: user.id
+      },
+      withCredentials: true,
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    console.log("Product deleted successfully:", response.data);
+    return response.data;
+  } catch (error) {
+    console.error("Error deleting product:", error.response?.data || error.message);
+    throw error;
+  }
+};
+
+
+export const updateProductApi = async (imageUpdated, productData, user, accessToken) => {
+  console.log("Update Product API called with:", imageUpdated, productData);
+  const token = accessToken || user?.accessToken;
+    const imageArray = [];
+if(imageUpdated)
+{
+
+  for (const image of productData.images) {
+    const data = new FormData();
+    data.append("file", image);
+    data.append("upload_preset", "daily_deals");
+    data.append("cloud_name", "dz2py1xii");
+    const imageinfo = await axios.post(
+      "https://api.cloudinary.com/v1_1/dz2py1xii/image/upload",
+      data
+    );
+    imageArray.push(imageinfo.data.url);
+  }
+  productData.images = imageArray;
+}
+  try {
+    const response = await axios.put(`${BASE_URL}/products/${productData._id}`,productData, {
+      params: {
+        userType: user.userType,
+        storeId: user.id
+      },
+      withCredentials: true,
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    console.log("Product updated successfully:", response.data);
+    return response.data;
+  } catch (error) {
+    console.error("Error updating product:", error.response?.data || error.message);
+    throw error;
+  }
+};
+
+export const getOrders = async(user,accessToken)=>{
+  const token = accessToken || user?.accessToken;
+  try {
+      const response = await axios.get(`${BASE_URL}/orders`, {
+      params:{
+        userType: user.userType,
+        storeId: user.id
+      },
+      withCredentials: true,
+      headers: {
+        Authorization: `Bearer ${token}`, 
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching orders:", error.response?.data || error.message);
+    throw error;
+  }
+}
+
+export const getOrderDetails = async (orderId,user,accessToken)=>{
+  const token = accessToken || user?.accessToken;
+  try {
+      const response = await axios.get(`${BASE_URL}/orders/${orderId}`, {
+      params:{
+        userType: user.userType,
+        storeId: user.id
+      },
+      withCredentials: true,
+      headers: {
+        Authorization: `Bearer ${token}`, 
+      },
+    });
+    console.log("Order details fetched successfully:", response.data);
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching order details:", error.response?.data || error.message);
+    throw error;
+  }
+}
+
+export const dispatchOrder = async (orderId, user, accessToken) => {
+  const token = accessToken || user?.accessToken;
+  try {
+    const response = await axios.put(`${BASE_URL}/orders/dispatch/${orderId}`, {}, {
+      params: {
+        userType: user.userType,
+        storeId: user.id
+      },
+      withCredentials: true,
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    console.log("Order dispatched successfully:", response.data);
+    return response.data;
+  } catch (error) {
+    console.error("Error dispatching order:", error.response?.data || error.message);
+    throw error;
+  }
+}
+
+export const getDashboardData = async (user, accessToken) => {
+  const token = accessToken || user?.accessToken;
+  try {
+    const response = await axios.get(`${BASE_URL}/dashboard/${user.id}`, {
+      params: {
+        userType: user.userType,
+        storeId: user.id,
+      },
+      withCredentials: true,
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching dashboard data:", error.response?.data || error.message);
+    throw error;
+  }
+}
